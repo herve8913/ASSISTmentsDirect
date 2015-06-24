@@ -1,0 +1,121 @@
+package org.assistments.direct.student;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.List;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.assistments.connector.controller.AssignmentController;
+import org.assistments.connector.controller.StudentClassController;
+import org.assistments.connector.domain.User;
+import org.assistments.connector.utility.Constants;
+import org.assistments.connector.utility.Response;
+import org.assistments.dao.controller.ExternalAssignmentDAO;
+import org.assistments.dao.controller.ExternalStudentClassDAO;
+import org.assistments.dao.controller.ExternalUserDAO;
+import org.assistments.dao.domain.ExternalAssignment;
+import org.assistments.dao.domain.ExternalStudentClass;
+import org.assistments.dao.domain.ExternalUser;
+import org.assistments.direct.LiteUtility;
+import org.assistments.direct.TransferUserException;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+@WebServlet({ "/beginAssignment", "/BeginAssignment" })
+public class BeginAssignment extends HttpServlet {
+
+	private static final long serialVersionUID = -8487938278071103716L;
+
+	public BeginAssignment() {
+		super();
+	}
+	
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		doPost(req, resp);
+	}
+	
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		String firstName = req.getParameter("first_name").toLowerCase();
+		String lastName = req.getParameter("last_name").toLowerCase();
+//		String accessCode = req.getParameter("access_code");
+		String assignmentRef = req.getParameter("assignment_ref");
+		ExternalAssignmentDAO assignmentDAO = new ExternalAssignmentDAO(LiteUtility.PARTNER_REF);
+		ExternalAssignment assignment = assignmentDAO.findByExternalRef(assignmentRef);
+		
+		if(assignment != null) {
+			//create student account
+			String teacherRef = new String();
+			String studentClassRef = new String();
+			String token = assignment.getAssistmentsAccessToken();
+			ExternalStudentClassDAO classDAO = new ExternalStudentClassDAO(LiteUtility.PARTNER_REF);
+			ExternalStudentClass esc = classDAO.findByAccessToken(token);
+			studentClassRef = esc.getAssistmentsExternalRefernce();
+
+			ExternalUserDAO userDAO = new ExternalUserDAO(LiteUtility.PARTNER_REF);
+			ExternalUser user = userDAO.findByAccessToken(token);
+			teacherRef = user.getAssistmentsExternalRefernce();
+			User student = LiteUtility.populateStudentInfo(firstName.substring(0, 1).toUpperCase()+firstName.substring(1),
+					lastName.substring(0, 1).toUpperCase() + lastName.substring(1));
+			List<String> studentRefAccessToken = null;
+			try {
+				String partnerExternalRef = student.getDisplayName() +"_" +teacherRef;
+				studentRefAccessToken = LiteUtility.transferStudent(student, partnerExternalRef);
+			} catch(TransferUserException e) {
+				String errorMessage = e.getMessage();
+				String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+				LiteUtility.directToErrorPage(errorMessage, instruction, req, resp);
+				return;
+			}
+
+			
+			if(studentRefAccessToken != null) {
+				String studentRef = studentRefAccessToken.get(0);
+				String onBehalf = studentRefAccessToken.get(1);
+				
+				StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
+				String studentReportURL = Constants.ASSISSTments_URL+"external_tutor/student_class/report?partner_id="+LiteUtility.PARTNER_ID
+						+"&class_ref="+studentClassRef+"&assignment_ref="+assignmentRef;
+				String reportId = LiteUtility.generateStudentReportId(studentRef, assignmentRef);
+				ServletContext context = getServletContext();
+				context.setAttribute(reportId, studentReportURL);
+				String onExit = LiteUtility.generateStudentReportURL(studentRef, assignmentRef);
+				onExit = URLEncoder.encode(onExit, "UTF-8");
+				onExit = URLEncoder.encode(onExit, "UTF-8");
+				Response res = AssignmentController.getAssignment(assignmentRef, LiteUtility.PARTNER_REF, onBehalf, onExit);
+				if(res.getHttpCode() == 200) {
+					JsonElement jElement = new JsonParser().parse(res.getContent());
+					JsonObject jObject = jElement.getAsJsonObject();
+					String tutorURL = jObject.get("handler").getAsString();
+					String loginURL = Constants.LOGIN_URL;
+					String addressToGo = String.format("%1$s?partner=%2$s&access=%3$s&on_success=%4$s&on_failure=%5$s", 
+							loginURL, LiteUtility.PARTNER_REF, onBehalf, tutorURL, LiteUtility.LOGIN_FAILURE);
+					resp.sendRedirect(addressToGo);
+				} else {
+					String errorMessage = res.getContent();
+					String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+					LiteUtility.directToErrorPage(errorMessage, instruction, req, resp);
+				}
+			} else {
+				String errorMessage = "You just encountered an error. Please try it again.";
+				String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+				LiteUtility.directToErrorPage(errorMessage, instruction, req, resp);
+			}
+		} else { // wrong access code
+			String errorMessage = "It seems that the web page you just typed in doesn't exist.";
+			String instruction = "If you entered the URL in by hand, double check that it is correct";
+			LiteUtility.directToErrorPage(errorMessage, instruction, req, resp);
+		}
+	}
+}

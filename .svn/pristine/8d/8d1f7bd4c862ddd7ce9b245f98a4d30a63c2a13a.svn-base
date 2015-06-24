@@ -1,0 +1,39 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Sorry...</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/pure-release-0.6.0/pure-min.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/stylesheets/styles.css">
+<style type="text/css">
+li {
+	padding-bottom: 10px;
+}
+</style>
+</head>
+<body>
+	<div id="page-wrap">
+		<div
+			style="padding: 20px 0 0 0; background-color: #E1E6E6; width: 100%">
+			<img alt="ASSISTments" src="${pageContext.request.contextPath}/images/AssistmentsTMBlack.png">
+		</div>
+		<div
+			style="width: 40%; margin: 0 auto; text-align: left; min-width: 450px;">
+			<p style="margin: 20px 0 0 0;font-size: 20px; font-weight: bold;">There was a problem serving the
+				requested page.</p>
+			<p>&nbsp;</p>
+			<p style="color: red">${requestScope.error_message }</p>
+			<p>&nbsp;</p>
+			<p style="font-size: 15px;font-weight: bold;">Now you're wondering, "what do i do now!?!", Well...</p>
+
+			<ul>
+				<li>${requestScope.instruction }</li>
+
+				<li>If you continue to encounter this error, please contact <a href="mailto: assistments-help@wpi.edu">assistments-help@wpi.edu</a></li>
+			</ul>
+		</div>
+	</div>
+</body>
+</html>

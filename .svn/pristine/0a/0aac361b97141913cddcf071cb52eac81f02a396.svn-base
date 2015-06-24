@@ -1,0 +1,39 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>ASSISTments Direct</title>
+<link rel="stylesheet"  href="${pageContext.request.contextPath}/pure-release-0.6.0/pure-min.css">
+<link rel="stylesheet"  href="${pageContext.request.contextPath}/stylesheets/styles.css">
+</head>
+<body>
+	<div id="page-wrap">
+		<div class="header"></div>
+		<form action="${pageContext.request.contextPath}/beginAssignment" method="post" class="pure-form pure-form-aligned"
+			style="margin: 30px 0 0 0;">
+			<fieldset>
+				<legend>Please input your first name and last name, then
+					click 'Go to Assignment' to start the assignment.</legend>
+				<input type="hidden" name="assignment_ref" value=<%= request.getAttribute("assignment_ref").toString()%>>
+				<br>
+				<div style="margin:0 auto;  min-width: 450px; width:60%;">
+				<div class="pure-control-group">
+					<label for="first_name">First Name</label> <input type="text"
+						name="first_name" placeholder="First Name" required>
+				</div>
+				<div class="pure-control-group">
+					<label for="last_name">Last Name</label> <input type="text"
+						name="last_name" placeholder="Last Name" required>
+				</div>
+				<div class="pure-controls">
+					<input type="submit" value="Go to Assignment"
+						class="pure-button pure-button-primary">
+				</div>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+</body>
+</html>

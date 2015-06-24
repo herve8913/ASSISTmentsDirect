@@ -1,0 +1,70 @@
+package org.assistments.direct.teacher;
+
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.assistments.connector.controller.ShareLinkController;
+import org.assistments.connector.domain.ProblemSet;
+import org.assistments.connector.domain.ShareLink;
+import org.assistments.connector.domain.User;
+import org.assistments.direct.LiteUtility;
+
+@WebServlet({ "/share/*", "/Share/*" })
+public class ShareProblemSet extends HttpServlet {
+	private static final long serialVersionUID = -678301132130219044L;
+
+	public ShareProblemSet() {
+		super();
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		doGet(req, resp);
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		String pathInfo = req.getPathInfo();
+		pathInfo = pathInfo.substring(1);
+
+		String shareLinkRef = pathInfo;
+		ShareLink shareLink = ShareLinkController.getShareLinkByRef(
+				shareLinkRef, LiteUtility.PARTNER_REF);
+		if (shareLink != null) {
+			ProblemSet problemSet = shareLink.getProblemSet();
+			User distributor = shareLink.getDistributor();
+			
+			String encodedID = LiteUtility.encodeProblemSetId(problemSet.getDecodedID());
+			HttpSession session = req.getSession();
+			session.setAttribute("problem_set", String.valueOf(problemSet.getDecodedID()));
+			session.setAttribute("problem_set_str", encodedID);
+			session.setAttribute("problem_set_name", problemSet.getName());
+			session.setAttribute("distributer_email", distributor.getEmail());
+			session.setAttribute("distributer_name", distributor.getDisplayName());
+			session.setAttribute("share_link_ref", shareLinkRef);
+			
+//			session.removeAttribute("email");
+//			session.removeAttribute("message");
+			RequestDispatcher dispatcher = req
+					.getRequestDispatcher("/share.jsp");
+			dispatcher.forward(req, resp);
+		} else {
+			String errorMgs = "Sorry... The share link doesn't exist!";
+			req.setAttribute("error_message", errorMgs);
+			String instruction = "If you entered the URL in by hand, double check that it is correct";;
+			RequestDispatcher dispatcher = req
+					.getRequestDispatcher("/error.jsp");
+			req.setAttribute("instruction", instruction);
+			dispatcher.forward(req, resp);
+		}
+	}
+}

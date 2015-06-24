@@ -1,0 +1,21 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Not Found</title>
+<link rel="stylesheet"  href="${pageContext.request.contextPath}/stylesheets/styles.css">
+</head>
+<body>
+	<div id="page-wrap">
+		<div style="padding:20px 0 0 0; background-color: #E1E6E6; width: 100%" >
+			<img alt="ASSISTments" src="${pageContext.request.contextPath}/images/AssistmentsTMBlack.png">
+		</div>
+		<h3 style="color:red;">404: Page not Found</h3>
+		<h4>Sorry, but the page you are looking for has not been found. </h4>
+		<h4>Try checking the URL for errors, then hit the refresh button on your browser.</h4>
+		<img alt="Not Found" src="images/404.jpg">
+	</div>
+</body>
+</html>

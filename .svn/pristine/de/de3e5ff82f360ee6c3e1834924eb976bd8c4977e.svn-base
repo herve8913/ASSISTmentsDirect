@@ -1,0 +1,173 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta name="google-signin-client_id"
+	content="588893615069-3l8u6q8n9quf6ouaj1j9de1m4q24kb4k.apps.googleusercontent.com">
+<title>Login</title>
+<link rel="stylesheet"  href="pure-release-0.6.0/pure-min.css">
+<link rel="stylesheet"  href="stylesheets/styles.css">
+<link rel="stylesheet" href="stylesheets/teacher.css">
+<script type="text/javascript" 	src="js/jquery.min.js"></script>
+<script type="text/javascript" src="https://apis.google.com/js/platform.js"  async defer></script>
+<script type="text/javascript" 	src="js/script.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$("#teacher_login")
+				.submit(
+						function(event) {
+							$("#indicator").css("visibility", "visible");
+							$("#google_message").hide();
+							$("#facebook_message").hide();
+							$("#message").html("");
+						});
+		//hide all indicators
+		$("#google_login_indicator").css("visibility", "hidden");
+		$("#facebook_login_indicator").css("visibility", "hidden");
+		$("#google_message").hide();
+		$("#facebook_message").hide();
+		loadFacebook();
+		$("#password").focus(function() {
+			$("#message").html("");
+		});
+	});
+	function onSignIn(googleUser) {
+		var id_token = googleUser.getAuthResponse().id_token;
+		signOut();
+		$("#google_login_indicator").css("visibility", "visible");
+		$("#google_message").hide();
+		$("#facebook_message").hide();
+		$.ajax({
+			url: "TeacherLogin",
+			type: "POST",
+			data: {idtoken: id_token, option: "google"},
+			success: function(message, textStatus, xhr) {
+				if(xhr.status == 203) {
+					$("#google_login_indicator").css("visibility", "hidden");
+					signOut();
+					$("#google_message").html(message);
+					
+					$("#google_message").show("highlight");
+				} else {
+					window.location.replace(message);
+				}
+			},
+			error: function(data) {
+				$("#google_login_indicator").css("visibility", "hidden");
+				signOut();
+				$("#google_message").html("There is an error when you try to sign in with Google. Please try it again later!");
+				
+				$("#google_message").show();
+				signOut();
+			}
+		});
+	}
+	
+	//Here we run a very simple test of the Graph API after login is
+	// successful.  See statusChangeCallback() for when this call is made.
+	function sign_in_with_facebook() {
+		console.log('Welcome!  Fetching your information.... ');
+		$("#facebook_login_indicator").css("visibility", "visible");
+		$("#google_message").hide();
+		$("#facebook_message").hide();
+		FB.api('/me', function(response) {
+			console.log(response);
+			console.log('Successful login for: '
+				+ response.name);
+			//send user info to server to create an account
+			$.ajax({
+				url: "TeacherLogin",
+				type: 'POST',
+				data: {user_id: response.id, option:"facebook"},
+				//dataType: "json",
+				async: true,
+				success: function(message, textStattus, xhr) {
+					if(xhr.status == 203) {
+						$("#facebook_login_indicator").css("visibility", "hidden");
+						$("#facebook_message").html(message);
+						
+						$("#facebook_message").show();
+					} else {
+						window.location.replace(message);	
+					}
+					console.log(message);
+					
+				},
+				error: function(data) {
+					$("#facebook_login_indicator").css("visibility", "hidden");
+					$("#facebook_message").html("There is an error when you tried to sign up with Facebook. Please try it again later.");
+					
+					$("#facebook_message").show("highlight");
+				}
+			});
+		});
+	}
+	function fb_login() {
+		FB.login(function(response) {
+			if (response.authResponse) {
+				sign_in_with_facebook();
+			}
+
+		}, {
+			scope : 'public_profile,email'
+		});
+	}
+	//sign out from google
+	function signOut() {
+	    var auth2 = gapi.auth2.getAuthInstance();
+	    auth2.signOut().then(function () {
+	      console.log('User signed out.');
+	    });
+	  }
+</script>
+</head>
+<body>
+	<div id="page-wrap">
+		<c:import url="header.html" ></c:import>
+		<form action="TeacherLogin" method="post" class="pure-form pure-form-aligned"
+			style="margin: 30px 0px 0 0;" id="teacher_login">
+			<fieldset>
+				<div style="min-width: 450px;">
+				<div class="pure-control-group" >
+					<label for="email">Email</label> <input type="text"
+						name="email" placeholder="Email" value="${requestScope.email }" class="pure-input-1-3" required>
+				</div>
+				<div class="pure-control-group">
+					<label for="password">Password</label> <input type="password"
+						name="password" id="password" placeholder="Password" class="pure-input-1-3" required>
+						
+				</div>
+				<div class="pure-controls">
+					<input type="submit" value="Login" id="submit" name="submit"
+						class="pure-button pure-button-primary">
+					<img 	src="images/indicator.gif"
+						style="visibility: hidden;" id="indicator" height="25" width="25">
+				</div>
+				</div>
+			</fieldset>
+		</form>
+		<div style='margin:15px 5px 10px 5px; color:red' id="message">${requestScope.message }</div>
+		<h3>---- or ----</h3>
+		<!-- sign in with google -->
+		<div style='margin:15px 5px 10px 5px; color:red' id="google_message"></div>
+		<div style="width: 250px; margin: auto; display: inline-block;">
+			<div id="my-signin2" class="g-signin2" data-onsuccess="onSignIn" data-theme="dark" 
+				data-width="250" data-height="50" data-longtitle="true"></div>
+		</div>
+		<img style="display: inline-block; position: relative; bottom:5px;"	src="images/indicator.gif" id="google_login_indicator" height="25" width="25">
+		<div style="margin-top: 20px;"></div>
+		<div id="fb-root"></div>
+		<!-- sign in with facebook -->
+		<div style='margin:15px 5px 10px 5px; color:red' id="facebook_message"></div>
+		<a href="javascript:void(0);" onclick="fb_login();" style="text-decoration: none;"> 
+			<img src="images/sign_in_with_facebook.png"
+			width="260px" height="60px" border="0" alt="Sign in with Facebook">
+		</a>
+		<img 	style="display: inline; bottom:10px; position: relative;" src="images/indicator.gif" id="facebook_login_indicator" height="25" width="25">
+			
+	</div>
+</body>
+</html>

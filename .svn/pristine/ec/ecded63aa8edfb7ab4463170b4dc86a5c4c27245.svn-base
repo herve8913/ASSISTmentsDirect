@@ -1,0 +1,138 @@
+package org.assistments.direct.teacher;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.codec.binary.Base32;
+import org.assistments.connector.domain.User;
+import org.assistments.dao.controller.ExternalShareLinkDAO;
+import org.assistments.dao.domain.ExternalShareLink;
+import org.assistments.direct.LiteUtility;
+import org.assistments.direct.TransferUserException;
+
+@WebServlet({ "/ShareSetup", "/share-setup" })
+public class ShareFormSetup extends HttpServlet {
+	private static final long serialVersionUID = 974128139273564080L;
+	
+	public static final String LOGIN = "Log in";
+	public static final String SIGN_UP = "Create Account";
+	public static final String GET_LINKS = "Send";
+
+	public ShareFormSetup() {
+		super();
+	}
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		doGet(req, resp);
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		String submit = req.getParameter("submit");
+		if(submit == null) {
+			req.getRequestDispatcher("/404.jsp").forward(req, resp);
+			return;
+		}
+		HttpSession reqSession = req.getSession();
+		String userRef = new String();
+		String accessToken = new String();
+		String email = req.getParameter("email").trim().toLowerCase();
+		String pwd = req.getParameter("password");
+		String problemSet = (String)reqSession.getAttribute("problem_set");
+		String shareLinkRef = (String)reqSession.getAttribute("share_link_ref");
+		String problemSetName = (String)reqSession.getAttribute("problem_set_name");
+		String problemSetStr = (String)reqSession.getAttribute("problem_set_str");
+		
+		String studentClassPartnerRef = email;
+
+//		ExternalUserDAO userDAO = new ExternalUserDAO(LiteUtility.PARTNER_REF);
+		User teacherInfo = LiteUtility.populateTeacherInfo(
+				"ASSISTmentsDirect", "Teacher", "Teacher");
+		List<String> refAndToken = null;
+		try {
+			if(LOGIN.equals(submit) || SIGN_UP.equals(submit)) {
+				refAndToken = LiteUtility.transferUser(teacherInfo,
+						email, pwd);
+			} else if(GET_LINKS.equals(submit)) {
+				refAndToken = LiteUtility.transferUser(teacherInfo, email);
+			}
+		} catch(TransferUserException e) {
+			String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+			LiteUtility.directToErrorPage(e.getMessage(), instruction, req, resp);
+		}
+		userRef = refAndToken.get(0);
+		accessToken = refAndToken.get(1);
+
+		String studentClassName = "Class";
+		// create a class for this teacher
+		String studentClassRef = LiteUtility.createClass(studentClassName,
+				accessToken, studentClassPartnerRef);
+		// create class assignment
+		// String problemSetID = Utility.decodeProblemSetString(problemSet);
+		String assignmentRef = LiteUtility.createAssignment(problemSet,
+				studentClassRef, accessToken, email);
+
+		if (assignmentRef != null) {
+			Base32 base32 = new Base32();
+			String reportRef = base32.encodeAsString(assignmentRef.getBytes());
+			
+			String teacherLink = LiteUtility.REPORT_LINK_PREFIX + "/" + reportRef;
+			String studentLink = LiteUtility.ASSIGNMENT_LINK_PREFIX + "/" + assignmentRef;
+			//store the association between share link and user
+			ExternalShareLink shareLink = new ExternalShareLink(LiteUtility.PARTNER_REF);
+			shareLink.setAssistmentsExternalRefernce(shareLinkRef);
+			shareLink.setAssistmentsAccessToken(accessToken);
+			shareLink.setPartnerExternalReference(email);
+			shareLink.setNote(assignmentRef);
+			ExternalShareLinkDAO shareLinkDAO = new ExternalShareLinkDAO(LiteUtility.PARTNER_REF);
+			shareLinkDAO.save(shareLink);
+			// send out the email
+			String text = "Greetings, \n\n An assignment has been created for you.\n\n"
+					+ "The assignment is "+ problemSetName + "\n\n"
+					+ "Give this link to your students. They will enter their name and do the assignment.\n"
+					+ studentLink + "\n\n"
+					+ "Use this link to see the data\n"
+					+ teacherLink
+					+ "\n\n" + "The ASSISTments Team";
+			String subject = "[ASSISTments] An Assignment Has been Created for You";
+			try {
+				LiteUtility.sendEmail(email, subject, text);
+			} catch (MessagingException e) {
+				//we fail to send out emails
+			}
+			reqSession.setAttribute("student_link", studentLink);
+			reqSession.setAttribute("teacher_link", teacherLink);
+//			reqSession.setAttribute("problem_set_name", problemSetName);
+			reqSession.setAttribute("user", userRef);
+			reqSession.setAttribute("email", email);
+			reqSession.setAttribute("submit", submit);
+			if(GET_LINKS.equals(submit)) {
+				resp.sendRedirect(req.getContextPath() + "/instruction");
+			} else {
+				resp.sendRedirect(req.getContextPath() + "/teacher");
+			}
+		} else {
+			String errorMsg = "Sorry... We encountered an error!";
+			String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+			LiteUtility.directToErrorPage(errorMsg, instruction, req, resp);
+		}
+	}
+}
