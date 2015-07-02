@@ -19,22 +19,10 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.codec.binary.Base32;
 import org.assistments.connector.controller.ShareLinkController;
 import org.assistments.connector.controller.StudentClassController;
-import org.assistments.connector.controller.UserController;
 import org.assistments.connector.domain.ShareLink;
-import org.assistments.connector.domain.User;
-import org.assistments.connector.utility.Response;
 import org.assistments.dao.controller.ExternalShareLinkDAO;
-import org.assistments.dao.controller.ExternalStudentClassDAO;
-import org.assistments.dao.controller.ExternalUserDAO;
 import org.assistments.dao.domain.ExternalShareLink;
-import org.assistments.dao.domain.ExternalStudentClass;
-import org.assistments.dao.domain.ExternalUser;
 import org.assistments.direct.LiteUtility;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 @WebServlet({ "/Teacher", "/teacher" })
 public class Teacher extends HttpServlet {
@@ -86,6 +74,12 @@ public class Teacher extends HttpServlet {
 			}
 			session.setAttribute("assignments", assignmentsInfo);
 		}
+		List<Map<String,String>> allSections = StudentClassController.getAllSections(email);
+		session.setAttribute("all_sections", allSections);
+		
+		List<Map<String,String>> allStudents = StudentClassController.getAllStudents(allSections);
+		session.setAttribute("all_students", allStudents);
+		
 		//get all students
 		//Temporally put code here
 		//get student class ref

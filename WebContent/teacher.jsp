@@ -31,21 +31,31 @@
 	.home-menu .pure-menu-selected a {
 		color: white !important;
 	}
-	.sortable_section {
-    border: 1px solid #eee;
-    width: 242px;
-    min-height: 20px;
-    list-style-type: none;
-    margin: 0;
-    padding: 5px 0 0 0;
-    margin-right: 10px;
-  }
-  .sortable_section li{
-    margin: 0 5px 5px 5px;
-    padding: 5px;
-    font-size: 1.2em;
-    width: 220px;
-  }
+	/* modify pure button */
+	.button-success,
+        .button-error,
+        .button-warning,
+        .button-secondary {
+            color: white;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-success {
+            background: rgb(28, 184, 65); /* this is a green */
+        }
+
+        .button-error {
+            background: rgb(202, 60, 60); /* this is a maroon */
+        }
+
+        .button-warning {
+            background: rgb(223, 117, 20); /* this is an orange */
+        }
+
+        .button-secondary {
+            background: rgb(66, 184, 221); /* this is a light blue */
+        }
 </style>
 <script>
   	$(function() {
@@ -55,17 +65,14 @@
   		var headers = $('#accordion .accordion-header');
   		$(".direct_links").hide();
   		$(".share_link").hide();
-  		$( ".sortable_section" ).sortable({
-  	      connectWith: ".connectedSortable"
-  	    }).disableSelection();
   		
   		//$("#student_list").sortable();
 		$.each(headers, function(index, value) {
 			var panel = $(this).next();
   		    var isOpen = panel.is(':visible');
   		    if(isOpen) {
-  		    	$(this).addClass("ui-state-active");
   		    	$(this).removeClass("ui-state-default");
+  		    	$(this).addClass("ui-state-active");
   		    } else {
   		    	$(this).removeClass("ui-state-active");
   		    	$(this).addClass("ui-state-default");
@@ -76,15 +83,15 @@
   		    var panel = $(this).next();
   		    var isOpen = panel.is(':visible');
   		    if(!isOpen) {
-  		    	$(this).addClass("ui-state-active");
   		    	$(this).removeClass("ui-state-default");
-  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-plusthick");
-  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-closethick");
+  		    	$(this).addClass("ui-state-active");
+  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-triangle-1-e");
+  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-triangle-1-s");
   		    } else {
   		    	$(this).removeClass("ui-state-active");
   		    	$(this).addClass("ui-state-default");
-  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-closethick");
-  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-plusthick");
+  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-triangle-1-s");
+  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-triangle-1-e");
   		    }
   		    // open or close as necessary
   		    panel[isOpen? 'slideUp': 'slideDown']()
@@ -139,9 +146,9 @@
   			  				success: function(data){
   			  					var res = "";
   			  					for (var i=0;i<data.length;i++){
-  			  	  					res += "<li class='ui-state-default'>" + data[i].first_name+" "+ data[i].last_name + "</li>";
+  			  	  					res += "<tr><td>" + data[i].first_name+"</td><td>"+ data[i].last_name + "</td><td>no group</td><td><input type ='checkbox'	name ='add_to_group'></td></tr>";
   			  					}
-  			  					$("#student_list").append(res);
+  			  					$("#all_student_table").append(res);
   			  					$("#import_student_list_indicator").css("visibility","hidden");
   			  					$("#upload_student_list").val("Import");
   			  				},
@@ -161,16 +168,91 @@
   		});
   		
   		$("#add_new_section").click(function(){
-  			section_counter++;
-  			var newSection = "";
-  			newSection += "<h4>Student List for Section "+section_counter+":</h4>";
-  			newSection += "<div><ul id='student_list_section"+section_counter+"' class='connectedSortable sortable_section'></ul></div><hr></hr>";
-  			$("#student_list_zone").append(newSection);
-  			$( ".sortable_section" ).sortable({
-  	  	      connectWith: ".connectedSortable"
-  	  	    }).disableSelection();
+  			var sectionName = "Default Section";
+  			$.ajax({
+  				url:'CreateNewSection',
+  				type:'POST',
+  				data:{sectionName: sectionName},
+  				dataType:"json",
+  				async: true,
+  				success: function(data){
+  					var sectionId = data.sectionId;
+  		  			section_counter++;
+  					var newSection = "";
+  		  			newSection += "<br><h4 class='accordion-header ui-accordion-header ui-helper-reset ui-state-active ui-accordion-icons ui-corner-all new_section_header'>";
+  		  			newSection += "<span class='ui-accordion-header-icon ui-icon ui-icon-triangle-1-s'></span>"+sectionName+"</h4>";
+  		  			newSection += "<div id='"+sectionId+"' class='ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom'><br/><div class='datagrid'><table width='100%' style='text-align:center;' class='pure-table-striped'>";
+  		  			newSection += "<thead><tr><th>First Name</th><th>Last Name</th><th>Remove</th></tr></thead>";
+  		  			newSection += "<tbody id='"+sectionId+"_table'></tbody></table></div></div>";
+	  		  		$("#student_list_zone").append(newSection);
+	  	  			//setup new accordian action
+	  	  			$(".new_section_header").click(function() {
+	  	  	  		    var panel = $(this).next();
+	  	  	  		    var isOpen = panel.is(':visible');
+	  	  	  		    if(!isOpen) {
+	  	  	  		    	$(this).removeClass("ui-state-default");
+	  	  	  		    	$(this).addClass("ui-state-active");
+	  	  	  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-triangle-1-e");
+	  	  	  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-triangle-1-s");
+	  	  	  		    } else {
+	  	  	  		    	$(this).removeClass("ui-state-active");
+	  	  	  		    	$(this).addClass("ui-state-default");
+	  	  	  		    	$(".ui-accordion-header-icon", this).removeClass("ui-icon-triangle-1-s");
+	  	  	  		    	$(".ui-accordion-header-icon", this).addClass("ui-icon-triangle-1-e");
+	  	  	  		    }
+	  	  	  		    // open or close as necessary
+	  	  	  		    panel[isOpen? 'slideUp': 'slideDown']()
+	  	  	  		        // trigger the correct custom event
+	  	  	  		        .trigger(isOpen? 'hide': 'show');
+	
+	  	  	  		    // stop the link from causing a pagescroll
+	  	  	  		    return false;
+	  	  	  		});
+	  	  			//this header is already setup, remove new header identifier
+	  	  			$(".new_section_header").removeClass("new_section_header");
+	  	  			var newGroupNames ="<option value='"+sectionId+"'>"+sectionName+"</option>";
+	  	  			$("#group_name").append(newGroupNames);
+  				},
+  				error: function(data){
+  					alert("error")
+  				}
+  			});
   		});
+  		
+  		//place in group 
+  	  	$("#place_in_group_btn").click(function(){
+  	  		var sectionId = $("#group_name").val();
+  	  		var sectionName = $("#group_name option:selected").html();
+  	  		var studentsPlacedInGroup = [];
+  	  		var studentsPreviousSections = [];
+  	  		$("#all_student_table input:checked").each(function(){
+  	  			studentsPlacedInGroup.push($(this).attr("value"));
+  	  			studentsPreviousSections.push($(this).next().val());
+  	  			$(this).parent().prev().html(sectionName);
+  	  		});
+  	  		
+  	  		for(var i=0;i<studentsPlacedInGroup.length;i++){
+  	  			var newRow = $("#"+studentsPlacedInGroup[i]).html();
+  	  			newRow = "<tr id='"+studentsPlacedInGroup[i]+"'>"+newRow+"</tr>";
+  	  			$("#"+studentsPlacedInGroup[i]).remove();
+  	  			$("#"+sectionId+"_table").append(newRow);
+  	  		}
+  	  		$.ajax({
+  	  			url:'PlaceInGroup',
+  	  			type:'POST',
+  	  			data:{studentIds:JSON.stringify(studentsPlacedInGroup), oldStudentClassSectionIds:JSON.stringify(studentsPreviousSections), newStudentClassSectionId:sectionId},
+  	  			dataType:"text",
+  	  			async:true,
+  	  			success: function(data){
+  	  				//alert("done");
+  	  			},
+  	  			error: function(data){
+  	  				alert("error");
+  	  			}
+  	  		});
+  	  	});
   	});
+  	
 </script>
 </head>
 <body>
@@ -218,7 +300,7 @@
 		<div id="accordion" class="ui-accordion ui-widget ui-helper-reset">
 			<c:if test="${not empty sessionScope.student_link}">
 			<h3 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all">
-				<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-e"></span>
+				<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>
 				Newly Created Assignment
 			</h3>
 				<div class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom">
@@ -235,7 +317,7 @@
 			</c:if>
 				
 			<h3 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all">
-				<span class="ui-accordion-header-icon ui-icon ui-icon-closethick"></span>
+				<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>
 				Assignments
 			</h3>
 				<div id="assignments" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom">
@@ -278,40 +360,100 @@
 					</table>
 					</div>
 				</div>
+				<!-- end of assignment list -->
+				<!-- My Students -->
 				<h3 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all">
-				<span class="ui-accordion-header-icon ui-icon ui-icon-closethick"></span>
-					Roster
+				<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>
+					My Students
 				</h3>
 				<div id="roster" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom">
 					<div id="student_list_zone">
-						<h4>Student List:</h4>
-						<form id="upload_form" enctype="multipart/form-data">
-							<input id="student_list_file" type="file" name="student_list_file">
-							<input id="upload_student_list" type="button" class="pure-button" value="Import">
-							<img alt="" src="images/question_mark.png" style="position:relative;top:3px;" id="import_tooltip" height="15" width="15" title="Please upload the CSV file contains students' names">
-							<img src="images/indicator.gif"
-							 style="visibility:hidden;"id="import_student_list_indicator" height="25" width="25" alt="" >
-						</form>
-						<div>
-							<ul id="student_list" class="connectedSortable sortable_section">
-								<li class="ui-state-default">sample</li>
-							</ul>
+						<h4 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all" >
+							<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>
+							All Students
+						</h4>
+						<div id="all_students" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom">
+							<div style="height:50px;">
+								<div class="pure-u-1-3">Place checked students in to selected group</div>
+								<div class="pure-u-1-6">
+									<select id="group_name" style="width:90%;">
+										<c:forEach items="${sessionScope.all_sections }" var="each_section" varStatus="loop">
+										<option value="${each_section.id }">${each_section.name }</option>
+										</c:forEach>
+									</select>
+								</div>
+								<div class="pure-u-1-6"><input id="place_in_group_btn" type="button" value="Place in Group"></div>
+							</div>
+							<form id="upload_form" enctype="multipart/form-data">
+								<input id="student_list_file" type="file" name="student_list_file">
+								<input id="upload_student_list" type="button" class="pure-button button-secondary" value="Import">
+								<img alt="" src="images/question_mark.png" style="position:relative;top:3px;" id="import_tooltip" height="15" width="15" title="Please upload the CSV file contains students' names">
+								<img src="images/indicator.gif"
+								 style="visibility:hidden;"id="import_student_list_indicator" height="25" width="25" alt="" >
+							</form>
+							<br/>
+							<div class="datagrid">
+							<table width="100%" style="text-align:center;" class="pure-table-striped">
+								<thead>
+								<tr>
+									<th>First Name</th>
+									<th>Last Name</th>
+									<th>Group</th>
+									<th>Add to group</th>
+								</tr>
+								</thead>
+								<tbody id="all_student_table">
+									<c:forEach items="${sessionScope.all_students }" var="each_student" varStatus="loop">
+									<tr>
+										<td>${each_student.first_name }</td>
+										<td>${each_student.last_name }</td>
+										<td>${each_student.section_name }</td>
+										<td><input class="place_in_group_checkboxes" type ="checkbox"	name ="add_to_group" value="${each_student.student_id }">
+										<input type="hidden" value="${each_student.section_id }"></td>
+									</tr>
+									</c:forEach>
+								</tbody>
+							</table>
+							</div>
 						</div>
-						<hr></hr>
-						<h4>Student List for Section 1:</h4>
-						
-						<div>
-							<ul id="student_list_section1" class="connectedSortable sortable_section">
-								<li class="ui-state-default">item1</li>
-								<li class="ui-state-default">item2</li>
-								<li class="ui-state-default">item3</li>
-							</ul>
+						<c:forEach items="${sessionScope.all_sections }" var="each_section" varStatus="loop">
+						<br>
+						<h4 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all" >
+							<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-s"></span>
+							${each_section.name }
+						</h4>
+						<div id = "${each_section.id }" class="ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom">
+							
+							<br/>
+							<div class="datagrid">
+							<table width="100%" style="text-align:center;" class="pure-table-striped">
+								<thead>
+								<tr>
+									<th>First Name</th>
+									<th>Last Name</th>
+									<th>Remove</th>
+								</tr>
+								</thead>
+								<tbody id="${each_section.id }_table">
+									<c:forEach items="${sessionScope.all_students }" var="each_student" varStatus="loop">
+									<c:if test="${each_student.section_id==each_section.id}">
+									<tr id="${each_student.student_id }">
+										<td>${each_student.first_name }</td>
+										<td>${each_student.last_name }</td>
+										<td><input type ="button" class="pure-button button-error" value="Delete"></td>
+									</tr>
+									</c:if>
+									</c:forEach>
+								</tbody>
+							</table>
+							</div>
 						</div>
-						<hr></hr>
+						</c:forEach>
 					</div>
+					
+					<hr>
 					<button id="add_new_section">New Section</button>
 				</div>
-				<!-- end of assignment list -->
 			<!-- 
 			<h3 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all">
 				<span class="ui-accordion-header-icon ui-icon ui-icon-triangle-1-e"></span>
