@@ -117,6 +117,9 @@
   		});
   		
   		$("#upload_student_list").click(function(){
+  			var firstSectionName = $("#group_name option:first-child").html();
+  			var firstSectionId = $("#group_name option:first-child").val();
+  			
   			var student_list_file_name = $("#student_list_file").val();
   			if(student_list_file_name == ""){
   				alert("Please choose the file you want to upload."); // need to modify it later
@@ -145,10 +148,16 @@
   			  				async: true,
   			  				success: function(data){
   			  					var res = "";
+  			  					var rs = "";
   			  					for (var i=0;i<data.length;i++){
-  			  	  					res += "<tr><td>" + data[i].first_name+"</td><td>"+ data[i].last_name + "</td><td>no group</td><td><input type ='checkbox'	name ='add_to_group'></td></tr>";
+  			  	  					res += "<tr><td>" + data[i].first_name+"</td><td>"+ data[i].last_name + "</td><td>"+firstSectionName+"</td>"+
+  			  	  						"<td><input class='place_in_group_checkboxes' type ='checkbox'	name ='add_to_group' value=''>"+
+  			  	  						"<input type='hidden' value='"+firstSectionId+"'></td></tr>";
+  			  	  					rs += "<tr id=''><td>"+ data[i].first_name + "</td><td>"+data[i].last_name+"</td><td>"+
+  			  	  						"<input type='button' class='pure-button button-error' value='Delete'></td></tr>";
   			  					}
   			  					$("#all_student_table").append(res);
+								$("#"+firstSectionId+"_table").append(rs);
   			  					$("#import_student_list_indicator").css("visibility","hidden");
   			  					$("#upload_student_list").val("Import");
   			  				},
@@ -236,6 +245,8 @@
   	  			newRow = "<tr id='"+studentsPlacedInGroup[i]+"'>"+newRow+"</tr>";
   	  			$("#"+studentsPlacedInGroup[i]).remove();
   	  			$("#"+sectionId+"_table").append(newRow);
+  	  			//add delete btn 
+  	  			
   	  		}
   	  		$.ajax({
   	  			url:'PlaceInGroup',
@@ -251,6 +262,26 @@
   	  			}
   	  		});
   	  	});
+  		
+  		//delete btn
+  		$(".delete_btn").click(function(){
+  			var studentId = $(this).parent().parent().attr("id");
+  			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
+  			$(this).parent().parent().remove();
+  			$.ajax({
+  				url:'DeleteStudent',
+  				type:'POST',
+  				data:{studentId:studentId, sectionId:sectionId},
+  				dataType:"text",
+  				async:true,
+  				success: function(data){
+  		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
+  				},
+  				error: function(data){
+  					alert("error");
+  				}
+  			});
+  		});
   	});
   	
 </script>
@@ -440,7 +471,7 @@
 									<tr id="${each_student.student_id }">
 										<td>${each_student.first_name }</td>
 										<td>${each_student.last_name }</td>
-										<td><input type ="button" class="pure-button button-error" value="Delete"></td>
+										<td><input type ="button" class="pure-button button-error delete_btn" value="Delete"></td>
 									</tr>
 									</c:if>
 									</c:forEach>

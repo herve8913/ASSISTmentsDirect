@@ -4,14 +4,23 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import org.assistments.connector.controller.StudentClassController;
+import org.assistments.connector.domain.User;
+import org.assistments.dao.controller.ExternalStudentClassDAO;
+import org.assistments.dao.controller.ExternalUserDAO;
+import org.assistments.dao.domain.ExternalStudentClass;
+import org.assistments.dao.domain.ExternalUser;
 import org.assistments.direct.LiteUtility;
+import org.assistments.direct.TransferUserException;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -45,6 +54,9 @@ public class UploadStudentList extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		PrintWriter out = response.getWriter();
+		HttpSession session = request.getSession();
+		
+		String teacherPartnerExternalRef = (String) session.getAttribute("email");
 		String studentListFileName = request.getParameter("student_list_file_name");
 		String fileName = studentListFileName.substring(studentListFileName.lastIndexOf('\\')+1);
 		JsonArray studentList = new JsonArray();
@@ -56,9 +68,41 @@ public class UploadStudentList extends HttpServlet {
 		while((line=bufferedReader.readLine())!=null){
 			JsonObject jsonStudent = new JsonObject();
 			jsonStudent.addProperty("first_name", line.substring(0,line.indexOf(',')));
-			jsonStudent.addProperty("last_name", line.substring(line.indexOf(',')+1));
+			jsonStudent.addProperty("last_name", line.substring(line.indexOf(',')+2));
 			studentList.add(jsonStudent);
 			
+			String firstName = jsonStudent.get("first_name").getAsString();
+			String lastName = jsonStudent.get("last_name").getAsString();
+			String teacherRef = new String();
+			String studentClassRef = new String();
+			ExternalStudentClassDAO classDAO = new ExternalStudentClassDAO(LiteUtility.PARTNER_REF);
+			ExternalStudentClass esc = classDAO.findByPartnerExternalRef(teacherPartnerExternalRef);
+			studentClassRef = esc.getAssistmentsExternalRefernce();
+
+			ExternalUserDAO userDAO = new ExternalUserDAO(LiteUtility.PARTNER_REF);
+			ExternalUser user = userDAO.findByPartnerExternalRef(teacherPartnerExternalRef);
+			teacherRef = user.getAssistmentsExternalRefernce();
+			
+			User student = LiteUtility.populateStudentInfo(firstName.substring(0, 1).toUpperCase()+firstName.substring(1).toLowerCase(),
+					lastName.substring(0, 1).toUpperCase() + lastName.substring(1).toLowerCase());
+			List<String> studentRefAccessToken = null;
+			try {
+				String partnerExternalRef = student.getDisplayName() +"_" +teacherRef;
+				studentRefAccessToken = LiteUtility.transferStudent(student, partnerExternalRef);
+			} catch(TransferUserException e) {
+				String errorMessage = e.getMessage();
+				String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+				LiteUtility.directToErrorPage(errorMessage, instruction, request, response);
+				return;
+			}
+			if(studentRefAccessToken != null) {
+				String studentRef = studentRefAccessToken.get(0);
+				String onBehalf = studentRefAccessToken.get(1);
+				
+				StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
+			}else{
+				System.err.println("error occurred");
+			}
 		}
 		bufferedReader.close();
 		out.write(studentList.toString());
