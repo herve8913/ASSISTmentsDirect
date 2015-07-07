@@ -158,25 +158,6 @@
   			  					}
   			  					$("#all_student_table").append(res);
 								$("#"+firstSectionId+"_table").append(rs);
-					  	  		$(".delete_btn").off("click");
-					  	  		$(".delete_btn").click(function(){
-					  	  			var studentId = $(this).parent().parent().attr("id");
-					  	  			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
-					  	  			$(this).parent().parent().remove();
-					  	  			$.ajax({
-					  	  				url:'DeleteStudent',
-					  	  				type:'POST',
-					  	  				data:{studentId:studentId, sectionId:sectionId},
-					  	  				dataType:"text",
-					  	  				async:true,
-					  	  				success: function(data){
-					  	  		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
-					  	  				},
-					  	  				error: function(data){
-					  	  					alert("error happens");
-					  	  				}
-					  	  			});
-					  	  		});
   			  					$("#import_student_list_indicator").css("visibility","hidden");
   			  					$("#upload_student_list").val("Import");
   			  				},
@@ -267,27 +248,26 @@
   	  			newRow = "<tr id='"+studentsPlacedInGroup[i]+"'>"+newRow+"</tr>";
   	  			$("#"+studentsPlacedInGroup[i]).remove();
   	  			$("#"+sectionId+"_table").append(newRow);
+  	  			//add delete btn 
+	  	  		$(".delete_btn").click(function(){
+	  	  			var studentId = $(this).parent().parent().attr("id");
+	  	  			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
+	  	  			$(this).parent().parent().remove();
+	  	  			$.ajax({
+	  	  				url:'DeleteStudent',
+	  	  				type:'POST',
+	  	  				data:{studentId:studentId, sectionId:sectionId},
+	  	  				dataType:"text",
+	  	  				async:true,
+	  	  				success: function(data){
+	  	  		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
+	  	  				},
+	  	  				error: function(data){
+	  	  					alert("error");
+	  	  				}
+	  	  			});
+	  	  		});
   	  		}
-  	  		//add delete btn 
-  	  		$(".delete_btn").off("click");
-  	  		$(".delete_btn").click(function(){
-  	  			var studentId = $(this).parent().parent().attr("id");
-  	  			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
-  	  			$(this).parent().parent().remove();
-  	  			$.ajax({
-  	  				url:'DeleteStudent',
-  	  				type:'POST',
-  	  				data:{studentId:studentId, sectionId:sectionId},
-  	  				dataType:"text",
-  	  				async:true,
-  	  				success: function(data){
-  	  		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
-  	  				},
-  	  				error: function(data){
-  	  					alert("error happens");
-  	  				}
-  	  			});
-  	  		});
   	  		$.ajax({
   	  			url:'PlaceInGroup',
   	  			type:'POST',
@@ -307,7 +287,6 @@
   		$(".delete_btn").click(function(){
   			var studentId = $(this).parent().parent().attr("id");
   			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
-  			alert(sectionId);
   			$(this).parent().parent().remove();
   			$.ajax({
   				url:'DeleteStudent',
@@ -319,7 +298,7 @@
   		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
   				},
   				error: function(data){
-  					alert("error happen");
+  					alert("error");
   				}
   			});
   		});

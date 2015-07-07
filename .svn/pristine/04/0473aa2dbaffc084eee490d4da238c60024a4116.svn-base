@@ -73,7 +73,6 @@ public class UploadStudentList extends HttpServlet {
 			
 			String firstName = jsonStudent.get("first_name").getAsString();
 			String lastName = jsonStudent.get("last_name").getAsString();
-			System.out.println(firstName+" "+lastName);
 			String teacherRef = new String();
 			String studentClassRef = new String();
 			ExternalStudentClassDAO classDAO = new ExternalStudentClassDAO(LiteUtility.PARTNER_REF);
@@ -91,7 +90,6 @@ public class UploadStudentList extends HttpServlet {
 				String partnerExternalRef = student.getDisplayName() +"_" +teacherRef;
 				studentRefAccessToken = LiteUtility.transferStudent(student, partnerExternalRef);
 			} catch(TransferUserException e) {
-				System.err.println("error!");
 				String errorMessage = e.getMessage();
 				String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
 				LiteUtility.directToErrorPage(errorMessage, instruction, request, response);
@@ -116,7 +114,7 @@ public class UploadStudentList extends HttpServlet {
 		out.write(studentList.toString());
 		out.flush();
 		out.close();
-		System.out.println("done");
+		
 	}
 
 }
