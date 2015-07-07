@@ -15,6 +15,7 @@ import javax.servlet.http.HttpSession;
 
 import org.assistments.connector.controller.StudentClassController;
 import org.assistments.connector.domain.User;
+import org.assistments.connector.utility.Constants;
 import org.assistments.dao.controller.ExternalStudentClassDAO;
 import org.assistments.dao.controller.ExternalUserDAO;
 import org.assistments.dao.domain.ExternalStudentClass;
@@ -69,7 +70,6 @@ public class UploadStudentList extends HttpServlet {
 			JsonObject jsonStudent = new JsonObject();
 			jsonStudent.addProperty("first_name", line.substring(0,line.indexOf(',')));
 			jsonStudent.addProperty("last_name", line.substring(line.indexOf(',')+2));
-			studentList.add(jsonStudent);
 			
 			String firstName = jsonStudent.get("first_name").getAsString();
 			String lastName = jsonStudent.get("last_name").getAsString();
@@ -98,8 +98,14 @@ public class UploadStudentList extends HttpServlet {
 			if(studentRefAccessToken != null) {
 				String studentRef = studentRefAccessToken.get(0);
 				String onBehalf = studentRefAccessToken.get(1);
+				int type = Integer.parseInt(studentRefAccessToken.get(2));
+				if(type == Constants.BRAND_NEW_USER){
+					int studentId = StudentClassController.getStudentId(studentRef);
+					jsonStudent.addProperty("student_id", studentId);
+					studentList.add(jsonStudent);
+					StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
+				}
 				
-				StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
 			}else{
 				System.err.println("error occurred");
 			}

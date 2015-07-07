@@ -151,10 +151,10 @@
   			  					var rs = "";
   			  					for (var i=0;i<data.length;i++){
   			  	  					res += "<tr><td>" + data[i].first_name+"</td><td>"+ data[i].last_name + "</td><td>"+firstSectionName+"</td>"+
-  			  	  						"<td><input class='place_in_group_checkboxes' type ='checkbox'	name ='add_to_group' value=''>"+
+  			  	  						"<td><input class='place_in_group_checkboxes' type ='checkbox'	name ='add_to_group' value='"+data[i].student_id+"'>"+
   			  	  						"<input type='hidden' value='"+firstSectionId+"'></td></tr>";
-  			  	  					rs += "<tr id=''><td>"+ data[i].first_name + "</td><td>"+data[i].last_name+"</td><td>"+
-  			  	  						"<input type='button' class='pure-button button-error' value='Delete'></td></tr>";
+  			  	  					rs += "<tr id='"+data[i].student_id+"'><td>"+ data[i].first_name + "</td><td>"+data[i].last_name+"</td><td>"+
+  			  	  						"<input type='button' class='pure-button button-error delete_btn' value='Delete'></td></tr>";
   			  					}
   			  					$("#all_student_table").append(res);
 								$("#"+firstSectionId+"_table").append(rs);
@@ -177,7 +177,10 @@
   		});
   		
   		$("#add_new_section").click(function(){
-  			var sectionName = "Default Section";
+  			var sectionName = $("#new_section_name").val();
+  			if(sectionName == ""){
+  				sectionName = "Default Section";
+  			}
   			$.ajax({
   				url:'CreateNewSection',
   				type:'POST',
@@ -223,7 +226,7 @@
 	  	  			$("#group_name").append(newGroupNames);
   				},
   				error: function(data){
-  					alert("error")
+  					alert("error");
   				}
   			});
   		});
@@ -246,7 +249,24 @@
   	  			$("#"+studentsPlacedInGroup[i]).remove();
   	  			$("#"+sectionId+"_table").append(newRow);
   	  			//add delete btn 
-  	  			
+	  	  		$(".delete_btn").click(function(){
+	  	  			var studentId = $(this).parent().parent().attr("id");
+	  	  			var sectionId = $(this).parent().parent().parent().parent().parent().parent().attr("id");
+	  	  			$(this).parent().parent().remove();
+	  	  			$.ajax({
+	  	  				url:'DeleteStudent',
+	  	  				type:'POST',
+	  	  				data:{studentId:studentId, sectionId:sectionId},
+	  	  				dataType:"text",
+	  	  				async:true,
+	  	  				success: function(data){
+	  	  		  			$("#all_student_table input[value='"+studentId+"']").parent().parent().remove();
+	  	  				},
+	  	  				error: function(data){
+	  	  					alert("error");
+	  	  				}
+	  	  			});
+	  	  		});
   	  		}
   	  		$.ajax({
   	  			url:'PlaceInGroup',
@@ -483,7 +503,8 @@
 					</div>
 					
 					<hr>
-					<button id="add_new_section">New Section</button>
+					<div class="pure-u-1-3"><input id="new_section_name" type="text" value="" style="width:90%; height:32px;"></div>
+					<div class="pure-u-1-6"><button id="add_new_section">New Section</button></div>
 				</div>
 			<!-- 
 			<h3 class="accordion-header ui-accordion-header ui-helper-reset ui-state-default ui-accordion-icons ui-corner-all">

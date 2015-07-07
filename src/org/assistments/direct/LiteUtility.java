@@ -278,6 +278,7 @@ public class LiteUtility {
 
 		String userRef = new String();
 		String accessToken = new String();
+		String type = new String();
 
 		ExternalUserDAO userDAO = new ExternalUserDAO(PARTNER_REF);
 		if (!userDAO.isUserExist(partnerExternalRef)) {
@@ -302,6 +303,7 @@ public class LiteUtility {
 
 			// update db
 			userDAO.addNewUser(externalUser);
+			type = Integer.toString(Constants.BRAND_NEW_USER);
 		} else {
 			ExternalUser externalUser = userDAO
 					.findByPartnerExternalRef(partnerExternalRef);
@@ -314,9 +316,11 @@ public class LiteUtility {
 			userRef = externalUser.getAssistmentsExternalRefernce();
 			accessToken = externalUser.getAssistmentsAccessToken();
 			userDAO.update(externalUser);
+			type = Integer.toString(Constants.ALREADY_EXIST_USER);
 		}
 		result.add(userRef);
 		result.add(accessToken);
+		result.add(type);
 		return result;
 	}
 	
