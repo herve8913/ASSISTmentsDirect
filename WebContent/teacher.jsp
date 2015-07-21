@@ -221,7 +221,7 @@
   			var sectionName = $("#new_section_name").val();
 			//check if the name is empty
   			if(sectionName == ""){
-  				sectionName = "Default Section";
+  				sectionName = "Default Group";
   			}
 			//check if the name already exists in the database
 			var allSectionNames = [];
