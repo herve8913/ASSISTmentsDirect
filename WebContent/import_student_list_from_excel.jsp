@@ -104,8 +104,7 @@ $(function() {
 	            contentType: false, 
 				success:function(data){
 					if (data.result=="true"){
-						window.location.replace("http://hmd12-2.cs.wpi.edu:8080/direct/UploadStudentList?from=file&student_list_file_name="+student_list_file_name);
-						
+						window.location.replace("http://hmd12-2.cs.wpi.edu:8080/direct/UploadStudentList?from=excel&student_list_file_name="+student_list_file_name);
 					}else{
 						alert("something wrong")
 					}
@@ -205,14 +204,14 @@ $(function() {
 		
 		<div style="width:90%; margin:auto; text-align:left;">
 			<div>
-			<h3><i>Import from CSV file</i></h3>
+			<h3><i>Import from Excel file</i></h3>
 			<p>
 			Upload a file
 			</p>
 			<form id="upload_form" enctype="multipart/form-data">
 				<p><input id="student_list_file" type="file" name="student_list_file"></p>
 				<input id="upload_student_list" type="button" class="pure-button button-secondary" value="Import">
-				<img alt="" src="images/question_mark.png" style="position:relative;top:3px;" id="import_tooltip" height="15" width="15" title="Please upload the CSV file contains students' names">
+				<img alt="" src="images/question_mark.png" style="position:relative;top:3px;" id="import_tooltip" height="15" width="15" title="Please upload the Excel file contains students' firstname and lastname">
 				<img src="images/indicator.gif"
 					style="visibility:hidden;"id="import_student_list_indicator" height="25" width="25" alt="" >
 			</form>

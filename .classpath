@@ -6,5 +6,6 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v7.0"/>
 	<classpathentry kind="lib" path="C:/Users/swang3/Downloads/joauth_1.3.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/swang3/Downloads/poi-bin-3.12-20150511.tar/poi-bin-3.12-20150511/poi-3.12/poi-3.12-20150511.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

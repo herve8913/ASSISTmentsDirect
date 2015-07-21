@@ -1,6 +1,8 @@
 package org.assistments.direct.teacher;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -17,6 +19,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.assistments.connector.controller.StudentClassController;
 import org.assistments.connector.domain.User;
 import org.assistments.connector.utility.Constants;
@@ -145,7 +152,7 @@ public class UploadStudentList extends HttpServlet {
 			}
 			request.getRequestDispatcher("/Teacher").forward(request, response);
 		} else if(request.getParameter("from").toString().equals("file")){
-			JsonArray studentList = new JsonArray();
+//			JsonArray studentList = new JsonArray();
 			String studentListFileName = request.getParameter("student_list_file_name");
 			String fileName = studentListFileName.substring(studentListFileName.lastIndexOf('\\')+1);
 			
@@ -188,8 +195,8 @@ public class UploadStudentList extends HttpServlet {
 					int type = Integer.parseInt(studentRefAccessToken.get(2));
 					if(type == Constants.BRAND_NEW_USER){
 						int studentId = StudentClassController.getStudentId(studentRef);
-						jsonStudent.addProperty("student_id", studentId);
-						studentList.add(jsonStudent);
+//						jsonStudent.addProperty("student_id", studentId);
+//						studentList.add(jsonStudent);
 						StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
 					}
 					
@@ -198,10 +205,66 @@ public class UploadStudentList extends HttpServlet {
 				}
 			}
 			bufferedReader.close();
-			out.write(studentList.toString());
-			out.flush();
-			out.close();
-			System.out.println("done");
+//			out.write(studentList.toString());
+//			out.flush();
+//			out.close();
+			request.getRequestDispatcher("/Teacher").forward(request, response);
+		} else if (request.getParameter("from").toString().equals("excel")){
+
+			String studentListFileName = request.getParameter("student_list_file_name");
+			String fileName = studentListFileName.substring(studentListFileName.lastIndexOf('\\')+1);
+			
+			String filePath = LiteUtility.UPLOAD_DIRECTORY + "/" + fileName;
+			File file = new File(filePath);
+			FileInputStream fis = new FileInputStream(file);
+			POIFSFileSystem fs = new POIFSFileSystem(fis);
+			HSSFWorkbook wb = new HSSFWorkbook(fs);
+			HSSFSheet sheet = wb.getSheetAt(0);
+			for(int i =0;i<sheet.getPhysicalNumberOfRows();i++){
+				HSSFRow row = sheet.getRow(i);
+				if(row != null){
+					HSSFCell cell = row.getCell(0);
+					String firstName = cell.getStringCellValue();
+					cell = row.getCell(1);
+					String lastName = cell.getStringCellValue();
+					
+					String teacherRef = new String();
+					String studentClassRef = new String();
+					ExternalStudentClassDAO classDAO = new ExternalStudentClassDAO(LiteUtility.PARTNER_REF);
+					ExternalStudentClass esc = classDAO.findByPartnerExternalRef(teacherPartnerExternalRef);
+					studentClassRef = esc.getAssistmentsExternalRefernce();
+
+					ExternalUserDAO userDAO = new ExternalUserDAO(LiteUtility.PARTNER_REF);
+					ExternalUser user = userDAO.findByPartnerExternalRef(teacherPartnerExternalRef);
+					teacherRef = user.getAssistmentsExternalRefernce();
+					
+					User student = LiteUtility.populateStudentInfo(firstName.substring(0, 1).toUpperCase()+firstName.substring(1).toLowerCase(),
+							lastName.substring(0, 1).toUpperCase() + lastName.substring(1).toLowerCase());
+					List<String> studentRefAccessToken = null;
+					try {
+						String partnerExternalRef = student.getDisplayName() +"_" +teacherRef;
+						studentRefAccessToken = LiteUtility.transferStudent(student, partnerExternalRef);
+					} catch(TransferUserException e) {
+						String errorMessage = e.getMessage();
+						String instruction = "The server seems to be unstable at this moment. Please take a break and try it again later.";
+						LiteUtility.directToErrorPage(errorMessage, instruction, request, response);
+						return;
+					}
+					if(studentRefAccessToken != null) {
+						String studentRef = studentRefAccessToken.get(0);
+						String onBehalf = studentRefAccessToken.get(1);
+						int type = Integer.parseInt(studentRefAccessToken.get(2));
+						if(type == Constants.BRAND_NEW_USER){
+							int studentId = StudentClassController.getStudentId(studentRef);
+							StudentClassController.enrollStudent(studentClassRef, studentRef, LiteUtility.PARTNER_REF, onBehalf);
+						}
+						
+					}else{
+						System.err.println("error occurred");
+					}
+				}
+			}
+			request.getRequestDispatcher("/Teacher").forward(request, response);
 		}
 
 	}

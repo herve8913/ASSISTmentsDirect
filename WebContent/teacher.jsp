@@ -43,6 +43,10 @@
   		margin-top:10px;
   		height:65%;
   	}
+  	#upload_student_list_with_excel{
+  		margin-top:15px;
+  		height:45%;
+  	}
 	tbody.share_link tr td, tbody.direct_links tr td {
 		border-top: 3px solid;
 		border-bottom: 3px solid !important;
@@ -534,6 +538,10 @@
 								<div class="import-icon pure-u-1-3">
 									<img id="upload_student_list_with_file" src="images/FileImport.PNG"  />
 									<input class="import_src" type="hidden" value="${pageContext.request.contextPath}/import_student_list_from_local_file.jsp">
+								</div>
+								<div class="import-icon pure-u-1-3">
+									<img id="upload_student_list_with_excel" src="images/excel_import.PNG"  />
+									<input class="import_src" type="hidden" value="${pageContext.request.contextPath}/import_student_list_from_excel.jsp">
 								</div>
 							</div>
 					<!---------------------------------------- importing list block end ----------------------------------->		

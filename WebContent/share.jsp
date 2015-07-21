@@ -34,9 +34,18 @@ div.pure-control-group label.pure-u-1 {
 		$("#message").hide();
 		$("#verify_panel").hide();
 		loadFacebook();
-		
+		var permittedEmails = [];
 		if($("#url").val()!=""){
-			$("#submit").prop("disabled", true);	
+			$("#submit").prop("disabled", true);
+			var url = $("#url").val();
+			//url= "https://spreadsheets.google.com/feeds/cells/1BYl_LEjzWaUCc4jb97e_RP374Eeqop9-rBl6r6-kOZg/od6/public/values?alt=json"; //modify later
+			$.getJSON(url, function(data){
+				var entry = data.feed.entry;
+				$(entry).each(function(){
+					permittedEmails.push(this.gs$cell.$t);
+				});
+				
+			});
 		}
 		
 		//offer two options
@@ -53,7 +62,7 @@ div.pure-control-group label.pure-u-1 {
 		$("#login_area #email, #login_area #password").focus(function() {
 			$("#message").hide();
 		});
-		$("#login_area #email").focusout(function() {
+		$("#login_area #email").keyup(function() {
 			var email = $("#login_form  #email").val();	
 			if(email == null || email == ""  ) {
 				return false;
@@ -61,46 +70,41 @@ div.pure-control-group label.pure-u-1 {
 			var url = $("#url").val();
 			if(url!=""){
 				var flag = false;
-				$.getJSON(url, function(data){
-					var entry = data.feed.entry;
-					$(entry).each(function(){
-						if(this.gs$cell.$t == email){
-							flag = true;
-							$.ajax({
-								url: '../isUserNameTaken',
-								type: 'POST',
-								data: {email: email},
-								dataType: "json",
-								async: true,
-								success: function(data) {
-									if(data.result == "true") {
-										$("#log_in").prop("disabled", false);
-										$("#create_account").prop("disabled", true);
-										$("#verify_panel").hide();
-									} else {
-										$("#log_in").prop("disabled", true);
-										$("#create_account").prop("disabled", false);
-									}
-									
-								},
-								error: function(data) {
-									$("#message").html("You just encountered an error. Please try it again.");
-									$("#message").effect("highlight");
-									event.preventDefault();
+				for(var i =0; i<permittedEmails.length;i++){
+					if(permittedEmails[i] == email){
+						flag=true;
+						$.ajax({
+							url: '../isUserNameTaken',
+							type: 'POST',
+							data: {email: email},
+							dataType: "json",
+							async: true,
+							success: function(data) {
+								if(data.result == "true") {
+									$("#log_in").prop("disabled", false);
+									$("#create_account").prop("disabled", true);
+									$("#verify_panel").hide();
+								} else {
+									$("#log_in").prop("disabled", true);
+									$("#create_account").prop("disabled", false);
 								}
-							});
-							return false;
-						}
-					});
-					if(!flag){
-						$("#log_in").prop("disabled", true);
-						$("#create_account").prop("disabled", true);
-						return false;
+								
+							},
+							error: function(data) {
+								$("#message").html("You just encountered an error. Please try it again.");
+								$("#message").effect("highlight");
+								event.preventDefault();
+							}
+						});
+						break;
 					}
-				});
-				
-			}
-			if(url == ""){
+				}
+				if(!flag){
+					$("#log_in").prop("disabled", true);
+					$("#create_account").prop("disabled", true);
+					return false;
+				}
+			} else if(url == ""){
 				$.ajax({
 					url: '../isUserNameTaken',
 					type: 'POST',
@@ -126,28 +130,26 @@ div.pure-control-group label.pure-u-1 {
 				});
 			}
 		});
-		$("#get_links_form #email").focusout(function(){
+		$("#get_links_form #email").keyup(function(){
 			var email = $("#get_links_form #email").val();
 			if(email == null || email == ""  ) {
 				return false;
 			}
-			var url = $("#url").val();
-			//url= "https://spreadsheets.google.com/feeds/cells/1BYl_LEjzWaUCc4jb97e_RP374Eeqop9-rBl6r6-kOZg/od6/public/values?alt=json"; //modify later
-			$.getJSON(url, function(data){
-				var entry = data.feed.entry;
+			if($("#url").val()==""){
+				return false;
+			} else{
 				var flag = false;
-				$(entry).each(function(){
-					if(this.gs$cell.$t == email){
+				for(var i=0;i<permittedEmails.length;i++){
+					if(permittedEmails[i] == email){
 						$("#submit").prop("disabled", false);
 						flag = true;
-						return false;
+						break;
 					}
-				});
+				}
 				if (!flag) {
 					$("#submit").prop("disabled", true);
 				}
-				
-			});
+			}
 		});
 		$("#login_form").submit(function(event) {
 			if(buttonPressed == "Log in"){
